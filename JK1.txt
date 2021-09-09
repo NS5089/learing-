@@ -1,0 +1,38 @@
+java -jar C:\Users\Dell\Downloads\jenkins.war
+
+Jenkins password 
+
+3a4ca20b805b46e496ab1a4014bef9b1
+
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building..'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing..'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploying....'
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
