@@ -1,0 +1,182 @@
+Description: 'this template deploy alb on given public subnets and configure launch templates for external access'
+Parameters:
+  SingtelInstanceType:
+    Description: Allowed instance types for Application
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+     - t2.medium
+     - t2.large
+     - t2.xlarge
+    ConstraintDescription: must be a valid ec2 instance type
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+   
+Mappings:
+  AWSInstanceType2Arch:
+    t2.medium:
+      Arch: HVM64
+    t2.large:
+      Arch: HVM64
+    t2.xlarge:
+      Arch: HVM64
+    a1.medium:
+      Arch: HVM64
+    a2.large:
+      Arch: HVM64
+    a3.xlarge:
+      Arch: HVM64
+  AWSRegionArch2FaceAuthAMI:
+    us-east-1:
+      HVM64: ami-029bfac3973c1bda1
+  AWSRegionArch2ApplicationAMI:
+    us-east-1:
+      HVM64: ami-029bfac3973c1bda1
+Resources:
+   SigntelScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+       - !ImportValue PrivateSubnet1
+       - !ImportValue PrivateSubnet2
+      LaunchConfigurationName: !Ref SingtelLaunchconfig
+      MaxSize: 2
+      MinSize: 1
+      DesiredCapacity: 1
+      #LoadBalancerName: !Ref ElasticALB
+      TargetGroupARNs: 
+       - !Ref SingtelTargetGroup
+       - !Ref SingtelInternalTargetGroup
+  
+    SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue VPC
+      GroupDescription: Enable HTTP/HTTPS access
+      SecurityGroupIngress:
+       - IpProtocol: tcp
+         FromPort: 80
+         ToPort: 80
+         CidrIp: !Ref SSHLocation
+       - IpProtocol: tcp
+         FromPort: 443
+         ToPort: 443
+         CidrIp: !Ref SSHLocation
+
+  ElasticALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Scheme: internet-facing
+      SecurityGroups:
+       - !Ref ALBSecurityGroup
+      Subnets:
+       - !ImportValue PublicSubnet1
+       - !ImportValue PublicSubnet2
+      Type: application
+  
+  ElasticALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ElasticALB
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SingtelTargetGroup
+      Port: 80
+      Protocol: HTTP
+
+
+  ALBInternalSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue VPC
+      GroupDescription: Enable HTTP/HTTPS access internally
+      SecurityGroupIngress:
+       - IpProtocol: tcp
+         FromPort: 80
+         ToPort: 80
+         CidrIp: !ImportValue VpcCIDR
+       - IpProtocol: tcp
+         FromPort: 443
+         ToPort: 443
+         CidrIp: !ImportValue VpcCIDR
+
+  ElasticALBInternal:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Scheme: internal
+      SecurityGroups:
+       - !Ref ALBInternalSecurityGroup
+      Subnets:
+       - !ImportValue PrivateSubnet1
+       - !ImportValue PrivateSubnet2
+      Type: application
+  
+  ElasticALBListenerInternal:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ElasticALBInternal
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SingtelTargetGroup
+      Port: 80
+      Protocol: HTTP
+
+  SingtelTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: !ImportValue VPC
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+
+      
+  SingtelInternalTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      VpcId: !ImportValue VPC
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: 80
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+
+  SingtelInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access and HTTP from the load balancer only
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: !Ref SSHLocation
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+  
+  
+
+
+
+
+
+
+
+    
+        
+
+
+

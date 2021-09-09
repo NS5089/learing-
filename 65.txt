@@ -1,0 +1,28 @@
+Team, we need to test the Tetherfi service discovery and auto scaling on AWS cloud.
+For that we need to do below things:
+
+Creating:
+- Create scripts to spin up a new ec2 instance
+- get the applications from a repo (like svn or s3) into ec2
+- install the applications (batch files?)
+- configure environment variables
+- start the services 
+
+Scaling:
+- auto scaling group to maintain at least 2 copies of above server 
+- monitor and create new instances whenever needed
+- LB
+
+
+
+Autoscaling groups  Auto-scaling-group-for-tetherfi
+
+instance AMI : ami-029bfac3973c1bda1
+Instance type : t2.medium
+security group ports:
+keypair :
+
+target group:
+Health check path
+
+Auto_scaling_group_for_singtel

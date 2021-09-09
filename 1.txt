@@ -1,0 +1,49 @@
+3.95.29.69  nagi
+
+3.86.243.83 client1.com
+
+
+
+
+
+define command{
+        command_name    notify-host-by-email
+        command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nHost: $HOSTNAME$\nState: $HOSTSTATES$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n"  | /usr/bin/mailx -s "** $NOTIFICATIONTYPE$ HOST Alert: $HOSTNAME$ is $SERVICESTATE$ **" $CONTACTEMAIL$
+        }
+
+
+define command{
+        command_name    notify-service-by-email
+        command_line    /usr/bin/printf "%b" "***** Nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\n\nService: $SERVICEDESC$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICEOUTPUT$\n $NOTIFICATIONCOMMENT$\n" | /src/bin/mail -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS$/$SERVICEDESC$ is $SERVICESTATE$ **" $CONTACTEMAIL$
+        }
+
+
+define host {
+     use        linux-server
+     host_name  client1
+     alias      client1
+     address    3.86.243.83
+}
+
+define service {
+     use        		local-server
+     host_name  		client1
+     service_description      	Root Partition
+     Check_command              check_nrpe!check_disk
+}
+
+define service {
+     use        		local-server
+     host_name  		client1
+     service_description      	PING
+     Check_command              check_ping!100.0,20%!500.0,60%
+}
+
+
+
+
+
+
+
+ 
+9535827087

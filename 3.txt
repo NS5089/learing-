@@ -1,0 +1,65 @@
+setup email notification in nagios core using linux machine
+
+cd /usr/local/nagios/etc/objects/
+ls
+vim contacts.cfg
+
+define contacts {
+    contact_name          		nagiosadmin
+        alias             		Nagios Admin
+        email             		nirmala395089@gmail.com
+        service_notification_commands   notify-service-by-email
+        host_notification_commands      notify-host-by-email
+        service_notification_options    w,u,c,r,f,s
+        host_notification_options       d,u,r,f,s
+        service_notification_period     24x7
+        host_notification_period        24x7
+       }
+
+
+yum install mailx
+
+vim /etc/mail.rc
+
+
+set smtp=smtps://smtp.gmail.com:587
+set smtp-auth=login
+set smtp-auth-user=nirmala395089@gmail.com
+set smtp-auth-password="8867395089"
+set ssl-verify=ignore
+set nss-config-dir=/etc/pki/nssdb/
+
+
+
+
+echo "Hi Admin " | mail -v -s "Hello" nirmala395089@gmail.com
+
+(check your mail )
+
+ls
+
+cp commands.cfg commands.cfg.bk
+
+vim commands.cfg
+
+define command{
+       command_name  notify-host-by-email
+       command_line  /usr/bin/printf "%b" "*****  nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nHost: $HOSTNAME$\nState: $HOSTSTATE$\nAddress: $HOSTADDRESS$\nInfo: $HOSTOUTPUT$\n\nDate/Time: $LONGDATETIME$\n" | /usr/bin/mailx -s "** $NOTIFICATIONTYPES$ Host Alert: $HOSTNAME$ is $HOSTSTATE$ ** " $CONTACTEMAIL$
+       }
+
+ 
+
+define command{
+       command_name  notify-service-by-email
+       command_line  /usr/bin/printf "%b" "*****  nagios *****\n\nNotification Type: $NOTIFICATIONTYPE$\nservices: $SERVICEDECS$\nHost: $HOSTALIAS$\nAddress: $HOSTADDRESS$\nState: $SERVICESTATE$\n\nDate/Time: $LONGDATETIME$\n\nAdditional Info:\n\n$SERVICESOUTPUT$\n" | /usr/bin/mailx -s "** $NOTIFICATIONTYPE$ Service Alert: $HOSTALIAS/SERVICEDESC$ is $SERVICESTATE$ ** " $CONTACTEMAIL$
+       }
+
+
+service nagios restart
+
+/usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+
+
+
+
+
